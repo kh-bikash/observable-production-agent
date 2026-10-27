@@ -38,3 +38,7 @@ The HTTP service requires a bearer API token for `/run`, `/rollout`, `/metrics`,
 The optional tracing extra exports OpenTelemetry spans over OTLP HTTP. Set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and, for authenticated Phoenix, `PHOENIX_API_KEY`. A trace ID is returned to clients and included in structured logs. The Prometheus endpoint exposes counters and gauges; `deploy/alert-rules.yml` defines failure, loop, and rollback alerts. The sample scrape config reads the bearer token from a mounted secret file.
 
 Deploy behind TLS with persistent `/data`. The service uses SQLite and a thread-based HTTP server, so use one replica per database or move state to a shared database before horizontal scaling. The cost value is an estimate until provider usage and billing reconciliation are wired in.
+
+## Product interfaces
+
+`production-agent serve` starts the authenticated API. Its CLI `run`, `metrics`, `alerts`, and `rollout` commands call that API with `AGENT_API_TOKEN`. The browser at `/` offers the same operator actions and asks for the token at runtime; the token is not embedded in HTML. Both interfaces use the persisted rollout and metric store, so canary changes and alerts survive process restarts. Keep the browser and API behind TLS and an identity-aware reverse proxy when accessible outside loopback.

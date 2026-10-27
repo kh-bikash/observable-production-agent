@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .engine import LoopDetected, ProductionAgent
 from .llm import OpenAICompatibleLLM
 from .tracing import configure_tracing
+from .ui import PAGE
 
 
 class ModelClient:
@@ -24,8 +25,8 @@ def main() -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
     token = os.environ.get("AGENT_API_TOKEN", "")
-    if len(token) < 16:
-        raise SystemExit("Set AGENT_API_TOKEN to at least 16 characters")
+    if len(token) < 16 or token.startswith("replace-"):
+        raise SystemExit("Set a non-example AGENT_API_TOKEN of at least 16 characters")
     client = OpenAICompatibleLLM.from_env()
     configure_tracing()
     agent = ProductionAgent(
@@ -41,7 +42,13 @@ def main() -> None:
             return hmac.compare_digest(supplied, token)
 
         def do_GET(self):
-            if self.path == "/healthz":
+            if self.path == "/":
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(PAGE)))
+                self.end_headers()
+                self.wfile.write(PAGE)
+            elif self.path == "/healthz":
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b"ok")

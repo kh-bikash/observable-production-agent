@@ -9,6 +9,9 @@ description = "Health, metrics, traces, canary rollout, and rollback."
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+production-agent = "observable_production_agent.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff==0.17.3"]
 tracing = ["opentelemetry-api>=1.25,<2", "opentelemetry-sdk>=1.25,<2", "opentelemetry-exporter-otlp-proto-http>=1.25,<2"]

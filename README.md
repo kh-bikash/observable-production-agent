@@ -12,6 +12,8 @@ See [OPERATIONS.md](OPERATIONS.md) for deployment checks, canary rollout, alert 
 
 ## Quick start
 
+The installed `production-agent` command starts and operates the HTTP service. Set `OPENAI_API_KEY` and `AGENT_API_TOKEN`, then run `production-agent serve`. In a second terminal run `production-agent run "Summarize the incident"`, `production-agent metrics`, `production-agent alerts`, or `production-agent rollout 5`. The same service serves an operator browser at `http://127.0.0.1:8080/`; enter the API token to run prompts, inspect metrics and alerts, and change canary allocation.
+
 Requires Python 3.11 or newer. From this repository:
 
 ```powershell
@@ -47,6 +49,8 @@ python -m observable_production_agent
 
 ```mermaid
 flowchart LR
+    CLI[Command line] --> Client
+    Browser[Browser interface] --> Client
     Client[Authenticated client] --> API[Agent HTTP API]
     API --> Rollout[(Persisted canary percentage)]
     Rollout --> Stable[Stable model]
