@@ -6,6 +6,10 @@ The service exposes authenticated `/metrics`, `/prometheus`, and `/alerts` endpo
 
 `deploy/prometheus.yml` and `deploy/alert-rules.yml` provide a scrape configuration and alerts for failure rate, loops, and rollback. Place the API token in the referenced secret file and route Prometheus alerts to your alert manager.
 
+For a single-node deployment, copy `.env.example` to `.env`, replace the example secrets and model names, then run `docker compose up --build -d`. The compose file binds port 8080 to localhost and persists rollout and metric state in `agent_data`. Put TLS and access controls in a reverse proxy before exposing it.
+
+See [OPERATIONS.md](OPERATIONS.md) for deployment checks, canary rollout, alert routing, backup, and recovery.
+
 ## Quick start
 
 Requires Python 3.11 or newer. From this repository:
