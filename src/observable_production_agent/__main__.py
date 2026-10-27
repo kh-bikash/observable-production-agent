@@ -20,16 +20,20 @@ class ModelClient:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
     token = os.environ.get("AGENT_API_TOKEN", "")
     if len(token) < 16:
         raise SystemExit("Set AGENT_API_TOKEN to at least 16 characters")
     client = OpenAICompatibleLLM.from_env()
     configure_tracing()
-    agent = ProductionAgent(ModelClient(client, os.environ.get("STABLE_MODEL", "gpt-4.1-mini")),
-                            ModelClient(client, os.environ.get("CANARY_MODEL", "gpt-4.1")),
-                            os.environ.get("APP_DB", "agent.sqlite3"),
-                            canary_percent=int(os.environ.get("CANARY_PERCENT", "0")))
+    agent = ProductionAgent(
+        ModelClient(client, os.environ.get("STABLE_MODEL", "gpt-4.1-mini")),
+        ModelClient(client, os.environ.get("CANARY_MODEL", "gpt-4.1")),
+        os.environ.get("APP_DB", "agent.sqlite3"),
+        canary_percent=int(os.environ.get("CANARY_PERCENT", "0")),
+    )
 
     class Handler(BaseHTTPRequestHandler):
         def authorized(self) -> bool:
@@ -88,7 +92,10 @@ def main() -> None:
             except RuntimeError:
                 self.send_error(502)
 
-    server = ThreadingHTTPServer((os.environ.get("HOST", "127.0.0.1"), int(os.environ.get("PORT", "8080"))), Handler)
+    server = ThreadingHTTPServer(
+        (os.environ.get("HOST", "127.0.0.1"), int(os.environ.get("PORT", "8080"))),
+        Handler,
+    )
     try:
         server.serve_forever()
     finally:
