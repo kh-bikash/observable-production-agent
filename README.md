@@ -45,6 +45,27 @@ python -m observable_production_agent
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    Client[Authenticated client] --> API[Agent HTTP API]
+    API --> Rollout[(Persisted canary percentage)]
+    Rollout --> Stable[Stable model]
+    Rollout --> Canary[Canary model]
+    Stable --> Telemetry[Traces, logs, and metrics]
+    Canary --> Telemetry
+    Telemetry --> Dashboard[Prometheus and Phoenix]
+    Telemetry --> Alerts[(Loop and rollback alerts)]
+    Alerts -->|Canary failure threshold| Rollout
+    Stable --> Response[Response with trace ID]
+    Canary --> Response
+```
+
+| Component | Responsibility |
+|---|---|
+| API | Authenticates calls and exposes health, rollout, metrics, and alerts. |
+| Rollout store | Persists variant allocation and disables a failing canary. |
+| Observability | Exports OTLP spans and Prometheus metrics with alert rules. |
+
 Authenticated HTTP request -> persisted rollout allocation -> stable/canary model -> OpenTelemetry span and JSON log -> SQLite latency/cost/error metric -> rollback when canary failure rate crosses threshold.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for components, state, failure behavior, and operations.
