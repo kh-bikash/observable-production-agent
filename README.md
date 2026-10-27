@@ -2,6 +2,10 @@
 
 Serve an authenticated agent API with health checks, durable request metrics, optional OTLP tracing, canary traffic, and automatic rollback.
 
+The service exposes authenticated `/metrics`, `/prometheus`, and `/alerts` endpoints. Supply a stable `run_id` on related `/run` calls to detect repeated prompts and stop loops. Canary rollback and loop events are persisted in the alert table.
+
+`deploy/prometheus.yml` and `deploy/alert-rules.yml` provide a scrape configuration and alerts for failure rate, loops, and rollback. Place the API token in the referenced secret file and route Prometheus alerts to your alert manager.
+
 ## Quick start
 
 Requires Python 3.11 or newer. From this repository:

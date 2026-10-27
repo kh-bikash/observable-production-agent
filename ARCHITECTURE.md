@@ -30,3 +30,11 @@ The LLM adapter times out after 30 seconds and retries transient HTTP failures t
 3. Persist SQLite files on durable storage and back them up; migrate to a managed database for high write volume or multiple replicas.
 4. Run `pytest -q` in CI before deployment.
 5. Define workload specific evaluation cases, latency objectives, and rollback criteria before serving real users.
+
+## Serving and observability
+
+The HTTP service requires a bearer API token for `/run`, `/rollout`, `/metrics`, `/prometheus`, and `/alerts`; `/healthz` is unauthenticated. `calls` stores variant, latency, estimated cost, error, run ID, and a prompt hash. Raw prompts are not stored in the ledger. Repeated prompts with the same run ID trigger a durable loop alert. Canary percentage is persisted in `rollout`; a canary failure rate above the configured threshold sets it to zero. `alerts` records loop and rollback events.
+
+The optional tracing extra exports OpenTelemetry spans over OTLP HTTP. Set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and, for authenticated Phoenix, `PHOENIX_API_KEY`. A trace ID is returned to clients and included in structured logs. The Prometheus endpoint exposes counters and gauges; `deploy/alert-rules.yml` defines failure, loop, and rollback alerts. The sample scrape config reads the bearer token from a mounted secret file.
+
+Deploy behind TLS with persistent `/data`. The service uses SQLite and a thread-based HTTP server, so use one replica per database or move state to a shared database before horizontal scaling. The cost value is an estimate until provider usage and billing reconciliation are wired in.

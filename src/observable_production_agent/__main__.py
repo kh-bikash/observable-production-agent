@@ -6,7 +6,7 @@ import logging
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from .engine import ProductionAgent
+from .engine import LoopDetected, ProductionAgent
 from .llm import OpenAICompatibleLLM
 from .tracing import configure_tracing
 
@@ -43,6 +43,15 @@ def main() -> None:
                 self.wfile.write(b"ok")
             elif self.path == "/metrics" and self.authorized():
                 self.send_json(200, agent.metrics())
+            elif self.path == "/alerts" and self.authorized():
+                self.send_json(200, {"alerts": agent.alerts()})
+            elif self.path == "/prometheus" and self.authorized():
+                body = agent.prometheus_metrics().encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; version=0.0.4")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
             else:
                 self.send_error(404)
 
@@ -65,7 +74,7 @@ def main() -> None:
             try:
                 data = json.loads(self.rfile.read(size))
                 if self.path == "/run":
-                    response = agent.run(str(data["prompt"]))
+                    response = agent.run(str(data["prompt"]), run_id=data.get("run_id"))
                     self.send_json(200, response.__dict__)
                 elif self.path == "/rollout":
                     agent.set_canary_percent(int(data["percent"]))
@@ -74,6 +83,8 @@ def main() -> None:
                     self.send_error(404)
             except (ValueError, KeyError, TypeError):
                 self.send_error(400)
+            except LoopDetected:
+                self.send_error(409)
             except RuntimeError:
                 self.send_error(502)
 

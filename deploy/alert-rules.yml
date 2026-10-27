@@ -1,0 +1,22 @@
+groups:
+  - name: agent-health
+    rules:
+      - alert: AgentHighErrorRate
+        expr: sum(increase(agent_errors_total[5m])) / clamp_min(sum(increase(agent_requests_total[5m])), 1) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Agent error rate exceeded 20% for five minutes.
+      - alert: AgentLoopDetected
+        expr: increase(agent_alerts_total{kind="loop"}[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: An agent run repeated the same prompt too many times.
+      - alert: CanaryRolledBack
+        expr: increase(agent_alerts_total{kind="canary_rollback"}[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: Canary traffic was automatically set to zero after failures.
