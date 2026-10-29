@@ -1,14 +1,17 @@
 # Observable Production Agent
 
-Serve an authenticated agent API with health checks, durable request metrics, optional OTLP tracing, canary traffic, and automatic rollback.
+## About
 
-The service exposes authenticated `/metrics`, `/prometheus`, and `/alerts` endpoints. Supply a stable `run_id` on related `/run` calls to detect repeated prompts and stop loops. Canary rollback and loop events are persisted in the alert table.
+This service is for teams operating an AI endpoint and needing to understand how it behaves after deployment. It runs prompts through a stable model or a canary model, records latency, estimated cost, errors, and repeated-call loops, and can turn off the canary when its observed failure rate crosses a threshold. Operators can inspect the service through its API, CLI, or browser.
 
-`deploy/prometheus.yml` and `deploy/alert-rules.yml` provide a scrape configuration and alerts for failure rate, loops, and rollback. Place the API token in the referenced secret file and route Prometheus alerts to your alert manager.
+### What you can do
 
-For a single-node deployment, copy `.env.example` to `.env`, replace the example secrets and model names, then run `docker compose up --build -d`. The compose file binds port 8080 to localhost and persists rollout and metric state in `agent_data`. Put TLS and access controls in a reverse proxy before exposing it.
+- Serve an authenticated agent endpoint with health and metrics routes.
+- Route a chosen percentage of traffic to a canary model and roll it back on failures.
+- Watch errors, latency, loop alerts, and estimated model cost.
+- Export Prometheus metrics and optional OpenTelemetry traces.
 
-See [OPERATIONS.md](OPERATIONS.md) for deployment checks, canary rollout, alert routing, backup, and recovery.
+This is a self-hosted service with Docker Compose and an operations guide; it is not yet deployed at a public URL. The included monitoring files are starting points for a single-node installation. Cost figures are estimates and should be reconciled with provider billing.
 
 ## Quick start
 
