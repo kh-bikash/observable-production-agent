@@ -87,6 +87,48 @@ A Dockerfile is included for the HTTP service. Set secrets through your deployme
 
 `pytest -q` runs deterministic tests. GitHub Actions runs the same suite on pushes and pull requests.
 
+## Product guide
+
+### Run and observe a request
+
+Send an authenticated prompt to `/run` or use `production-agent run`. The service chooses the stable or canary model according to the persisted rollout percentage, records the request outcome, and returns a trace ID with the response. Supply the same `run_id` for related calls so repeated prompts can be recognized as a possible loop.
+
+| Endpoint or command | Operator use |
+|---|---|
+| `/healthz` | Check whether the process is responding. |
+| `/run` | Execute an agent request with a prompt and optional run ID. |
+| `/metrics` and `/prometheus` | Inspect JSON metrics or scrape Prometheus-format metrics. |
+| `/alerts` | Read loop and rollback events. |
+| `/rollout` or `production-agent rollout` | Change the percentage of canary traffic. |
+
+The operator browser presents run, metrics, alerts, and rollout controls. It is designed to be placed behind access controls, with its API token entered by the operator rather than embedded in the page.
+
+### Canary behavior
+
+Start with a small canary percentage, send representative requests, and watch latency and error rate. The rollout store survives a service restart. When the observed canary failure window crosses the configured threshold, the service records an alert and sets canary traffic back to zero. This is an application-level rollback of routing; it does not remove a deployment or undo external side effects.
+
+### Configuration and operations
+
+| Setting | Purpose |
+|---|---|
+| `AGENT_API_TOKEN` | Authenticate operator and run endpoints. |
+| `OPENAI_API_KEY`, `OPENAI_BASE_URL`, model names | Connect stable and canary model providers. |
+| `CANARY_PERCENT` | Initial canary allocation. |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, `PHOENIX_API_KEY` | Optional trace export. |
+
+The supplied Compose file persists rollout and metrics state in `agent_data` and binds the service to localhost. Put TLS and a reverse proxy in front of it before external traffic. `deploy/prometheus.yml` and `deploy/alert-rules.yml` are starting points for monitoring; configure alert delivery for your environment. Cost is estimated and should be reconciled with provider usage. See [OPERATIONS.md](OPERATIONS.md) for release, backup, and recovery steps and [ARCHITECTURE.md](ARCHITECTURE.md) for the request path.
+
+### Common issues
+
+| Symptom | Check |
+|---|---|
+| `/run` is unauthorized | Supply the configured API token through the expected header or CLI environment. |
+| Traces are absent | Verify the OTLP endpoint, optional Phoenix key, and that the tracing extra is installed. |
+| Canary traffic returns to zero | Inspect `/alerts` and recent failure metrics; rollback may have fired. |
+| Cost and billing disagree | The built-in cost figure is an estimate; use provider usage records for reconciliation. |
+
+Test rollback with a deliberately failing canary before relying on it. Retain enough metrics to explain a rollback, and define who responds to each alert in the operational runbook.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
